@@ -1,0 +1,4 @@
+coverage
+bandit
+pip-audit
+locust

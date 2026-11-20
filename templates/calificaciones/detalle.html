@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block titulo %}Calificación {{ calificacion }}{% endblock %}
+{% block contenido %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Calificación {{ calificacion.instrumento }} · {{ calificacion.ejercicio|stringformat:"d" }}</h1>
+  <div class="d-flex gap-2">
+    {% if puede.eliminar %}
+    <form method="post" action="{% url 'calificaciones:eliminar' calificacion.pk %}" onsubmit="return confirm('¿Eliminar esta calificación?');">
+      {% csrf_token %}<button class="btn btn-outline-danger btn-sm" type="submit">Eliminar</button>
+    </form>
+    {% endif %}
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'calificaciones:mantenedor' %}">Volver</a>
+  </div>
+</div>
+<div class="card card-body mb-3 small">
+  <div class="row">
+    <div class="col-md-3"><strong>Mercado:</strong> {{ calificacion.instrumento.mercado }}</div>
+    <div class="col-md-3"><strong>Fecha de pago:</strong> {{ calificacion.fecha_pago|date:"d-m-Y" }}</div>
+    <div class="col-md-3"><strong>Secuencia:</strong> {{ calificacion.secuencia|stringformat:"d" }}</div>
+    <div class="col-md-3"><strong>Origen:</strong> {{ calificacion.get_origen_display }}</div>
+    <div class="col-12 mt-2"><strong>Descripción:</strong> {{ calificacion.descripcion|default:"—" }}</div>
+  </div>
+</div>
+<div class="card">
+  <table class="table table-sm mb-0 tabla-grilla">
+    <thead><tr><th>Columna</th><th>Concepto</th><th class="num">Monto</th><th class="num">Factor</th></tr></thead>
+    <tbody>
+    {% for d in detalles %}
+      <tr><td>{{ d.concepto.columna }}</td><td>{{ d.concepto.nombre }}</td><td class="num">{{ d.monto|default_if_none:"" }}</td><td class="num">{{ d.factor|floatformat:8 }}</td></tr>
+    {% endfor %}
+    </tbody>
+    <tfoot><tr><th colspan="3">Suma de los factores 8 al 19</th><th class="num">{{ suma|floatformat:8 }}</th></tr></tfoot>
+  </table>
+</div>
+{% endblock %}

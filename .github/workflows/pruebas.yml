@@ -1,0 +1,32 @@
+# Ejecuta las pruebas y el análisis de seguridad en cada cambio (sección 5.3 y 6.1 del informe).
+name: Pruebas
+on: [push, pull_request]
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: nuam_app
+          POSTGRES_PASSWORD: clave_ci
+          POSTGRES_DB: nuam
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 5s --health-retries 10
+    env:
+      DJANGO_DEBUG: "1"
+      DB_HOST: localhost
+      DB_NAME: nuam
+      DB_USER: nuam_app
+      DB_PASSWORD: clave_ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt -r requirements-dev.txt
+      - run: coverage run --source=calificaciones,usuarios,auditoria,cargas --omit="*/migrations/*,*/tests/*" manage.py test calificaciones
+      - run: coverage report --fail-under=80
+      - run: bandit -r calificaciones usuarios auditoria cargas nuam -x "*/tests/*,*/migrations/*" -ll
+      - run: pip-audit -r requirements.txt

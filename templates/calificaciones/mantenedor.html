@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block titulo %}Mantenedor{% endblock %}
+{% block contenido %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <h1 class="h4 mb-0">Mantenedor de calificaciones</h1>
+  <div class="d-flex gap-2">
+    {% if puede.ingresar %}<a class="btn btn-nuam btn-sm" href="{% url 'calificaciones:ingresar' %}">Ingresar</a>{% endif %}
+    {% if puede.cargar %}<button class="btn btn-outline-secondary btn-sm" type="button" disabled title="Disponible en el Sprint 5">Carga x Factor</button>{% endif %}
+  </div>
+</div>
+
+<form method="get" class="card card-body py-3 mb-3">
+  <div class="row g-2 align-items-end">
+    <div class="col-sm-4 col-md-3"><label class="form-label small mb-1">Mercado</label>{{ filtro.mercado }}</div>
+    <div class="col-sm-4 col-md-3"><label class="form-label small mb-1">Origen</label>{{ filtro.origen }}</div>
+    <div class="col-sm-4 col-md-2"><label class="form-label small mb-1">Período comercial</label>{{ filtro.ejercicio }}</div>
+    <div class="col-md-4 d-flex gap-2">
+      <button class="btn btn-nuam btn-sm" type="submit">Buscar</button>
+      <a class="btn btn-outline-secondary btn-sm" href="{% url 'calificaciones:mantenedor' %}">Limpiar</a>
+    </div>
+  </div>
+</form>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover table-sm mb-0 tabla-grilla align-middle">
+      <thead>
+        <tr>
+          <th>Ejercicio</th><th>Instrumento</th><th>Fecha de pago</th><th>Descripción</th><th class="num">Secuencia</th><th>Origen</th>
+          {% for c in columnas_grilla %}<th class="num">F{{ c }}</th>{% endfor %}
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for cal in pagina %}
+        <tr>
+          <td>{{ cal.ejercicio|stringformat:"d" }}</td>
+          <td>{{ cal.instrumento }}</td>
+          <td>{{ cal.fecha_pago|date:"d-m-Y" }}</td>
+          <td>{{ cal.descripcion }}</td>
+          <td class="num">{{ cal.secuencia|stringformat:"d" }}</td>
+          <td>{{ cal.get_origen_display }}</td>
+          {% for d in cal.detalles.all %}{% if d.concepto.columna < 12 %}<td class="num">{{ d.factor|floatformat:8 }}</td>{% endif %}{% endfor %}
+          <td class="text-end"><a class="btn btn-link btn-sm" href="{% url 'calificaciones:detalle' cal.pk %}">Ver</a></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="11" class="text-center text-muted py-4">No hay calificaciones con esos filtros.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card-footer d-flex justify-content-between align-items-center small">
+    <span>{{ pagina.paginator.count }} registro{{ pagina.paginator.count|pluralize }}</span>
+    {% if pagina.has_other_pages %}
+    <nav><ul class="pagination pagination-sm mb-0">
+      {% if pagina.has_previous %}<li class="page-item"><a class="page-link" href="?{% if request.GET.mercado %}mercado={{ request.GET.mercado|urlencode }}&{% endif %}{% if request.GET.origen %}origen={{ request.GET.origen|urlencode }}&{% endif %}{% if request.GET.ejercicio %}ejercicio={{ request.GET.ejercicio|urlencode }}&{% endif %}page={{ pagina.previous_page_number }}">Anterior</a></li>{% endif %}
+      <li class="page-item disabled"><span class="page-link">{{ pagina.number }} / {{ pagina.paginator.num_pages }}</span></li>
+      {% if pagina.has_next %}<li class="page-item"><a class="page-link" href="?{% if request.GET.mercado %}mercado={{ request.GET.mercado|urlencode }}&{% endif %}{% if request.GET.origen %}origen={{ request.GET.origen|urlencode }}&{% endif %}{% if request.GET.ejercicio %}ejercicio={{ request.GET.ejercicio|urlencode }}&{% endif %}page={{ pagina.next_page_number }}">Siguiente</a></li>{% endif %}
+    </ul></nav>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

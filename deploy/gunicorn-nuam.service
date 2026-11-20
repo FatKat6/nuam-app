@@ -1,0 +1,15 @@
+[Unit]
+Description=Gunicorn - Mantenedor de Calificaciones nuam
+After=network.target
+
+[Service]
+User=nuam
+Group=nuam
+WorkingDirectory=/opt/nuam/app
+ExecStart=/opt/nuam/venv/bin/gunicorn nuam.wsgi:application --workers 3 --bind 127.0.0.1:8000 --access-logfile - --error-logfile -
+Restart=on-failure
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
