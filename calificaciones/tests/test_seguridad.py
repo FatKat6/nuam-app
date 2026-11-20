@@ -97,3 +97,12 @@ class SeguridadTests(DatosPrueba):
             log.save()
         with self.assertRaises(PermissionError):
             log.delete()
+
+    def test_ip_invalida_o_repetida_en_cabecera_no_rompe_el_login(self):
+        r = self.client.post(reverse("usuarios:login"), {"usuario": "operador_a", "clave": CLAVE},
+                             HTTP_X_REAL_IP="3.17.230.66, 3.17.230.66")
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(LogAuditoria.objects.filter(accion="LOGIN").first().ip, "3.17.230.66")
+        self.client.logout()
+        r = self.client.post(reverse("usuarios:login"), {"usuario": "operador_a", "clave": CLAVE}, HTTP_X_REAL_IP="no-es-ip")
+        self.assertEqual(r.status_code, 302)

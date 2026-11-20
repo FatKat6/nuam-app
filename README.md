@@ -38,6 +38,8 @@ Abrir http://127.0.0.1:8000. Sin `DB_HOST` usa SQLite; para PostgreSQL complete 
 
 ## Despliegue en AWS (2 EC2)
 
+> Cuenta del grupo: solo permite la región **Ohio (us-east-2)**. Prototipo desplegado en https://3.17.230.66
+
 1. **Subir el código a GitHub** (repositorio del grupo). El `.env` no se sube.
 2. **Bucket S3** privado para respaldos, con cifrado por defecto (SSE-S3). Anote el nombre.
 3. **Rol IAM** para la EC2 de datos con permiso `s3:PutObject` sobre ese bucket.

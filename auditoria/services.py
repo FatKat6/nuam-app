@@ -1,9 +1,19 @@
+import ipaddress
+
 from .models import DetalleLog, LogAuditoria
 
 
 def ip_cliente(request):
-    # Detrás de Nginx la IP real llega en X-Real-IP (lo fija Nginx, no el navegador).
-    return request.META.get("HTTP_X_REAL_IP") or request.META.get("REMOTE_ADDR")
+    """IP del cliente. Detrás de Nginx llega en X-Real-IP (lo fija Nginx, no el navegador).
+
+    Se toma el primer valor y se valida; si no es una IP válida se guarda vacío en vez de fallar.
+    """
+    valor = request.META.get("HTTP_X_REAL_IP") or request.META.get("REMOTE_ADDR") or ""
+    valor = valor.split(",")[0].strip()
+    try:
+        return str(ipaddress.ip_address(valor))
+    except ValueError:
+        return None
 
 
 def registrar(request, accion, usuario=None, calificacion=None, origen="SISTEMA", cambios=None):
