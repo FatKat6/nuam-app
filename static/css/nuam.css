@@ -1,0 +1,11 @@
+/* Estilos propios de nuam. Van en un archivo aparte (no en <style>) para que la
+   Content-Security-Policy pueda bloquear todo estilo y script en línea. */
+:root { --nuam: #1f4e79; }
+.navbar-nuam { background: var(--nuam); }
+.btn-nuam { background: var(--nuam); color: #fff; }
+.btn-nuam:hover { background: #163a5a; color: #fff; }
+.tabla-grilla th { background: #eaf1f8; font-weight: 600; font-size: .85rem; }
+.tabla-grilla td { font-size: .85rem; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.login-contenedor { margin-top: 12vh; }
+.marca-nuam { color: var(--nuam); }

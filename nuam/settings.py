@@ -112,6 +112,9 @@ SESSION_COOKIE_AGE = 30 * 60
 SESSION_SAVE_EVERY_REQUEST = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_COOKIE_HTTPONLY = True
+# La cookie CSRF tampoco es legible desde JavaScript (alerta de OWASP ZAP). El token
+# viaja en el campo oculto de cada formulario, así que ningún script la necesita.
+CSRF_COOKIE_HTTPONLY = True
 
 # Endurecimiento para producción (HTTPS detrás de Nginx)
 if not DEBUG:
@@ -119,6 +122,8 @@ if not DEBUG:
     SECURE_SSL_REDIRECT = env_bool("DJANGO_SSL_REDIRECT", True)
     SESSION_COOKIE_SECURE = env_bool("DJANGO_COOKIES_SECURE", True)
     CSRF_COOKIE_SECURE = env_bool("DJANGO_COOKIES_SECURE", True)
+    # HSTS y Content-Security-Policy los agrega Nginx (deploy/nginx-nuam.conf) para que
+    # cubran también los archivos estáticos. Aquí queda en 0 para no duplicar la cabecera.
     SECURE_HSTS_SECONDS = int(os.environ.get("DJANGO_HSTS_SECONDS", "0"))
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = "DENY"

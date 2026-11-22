@@ -106,3 +106,7 @@ class SeguridadTests(DatosPrueba):
         self.client.logout()
         r = self.client.post(reverse("usuarios:login"), {"usuario": "operador_a", "clave": CLAVE}, HTTP_X_REAL_IP="no-es-ip")
         self.assertEqual(r.status_code, 302)
+
+    def test_cookie_csrf_httponly(self):
+        r = self.client.get(reverse("usuarios:login"))
+        self.assertTrue(r.cookies["csrftoken"]["httponly"])
