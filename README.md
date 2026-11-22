@@ -45,20 +45,28 @@ Abrir http://127.0.0.1:8000. Sin `DB_HOST` usa SQLite; para PostgreSQL complete 
 3. **Rol IAM** para la EC2 de datos con permiso `s3:PutObject` sobre ese bucket.
    En AWS Academy suele existir el rol `LabRole`/`LabInstanceProfile`: úselo.
 4. **Grupos de seguridad**
-   - `sg-web`: entrada 443 y 80 desde `0.0.0.0/0`; 22 solo desde *Mi IP*.
-   - `sg-datos`: entrada 5432 **solo desde `sg-web`**; 22 solo desde *Mi IP*.
+   - `sg-web`: entrada 443 y 80 desde `0.0.0.0/0`.
+   - `sg-datos`: entrada 5432 **solo desde `sg-web`**.
+   - Sin puerto 22: la administración se hace con **EC2 → Conectar → Session Manager** (las instancias necesitan un rol
+     IAM con la política `AmazonSSMManagedInstanceCore`).
 5. **EC2 de datos**: Ubuntu 24.04, t3.micro, `sg-datos`, el rol IAM del paso 3.
    En *Advanced details → User data* pegue `deploy/user-data-datos.sh` (después de cambiar sus 3 valores).
    Al terminar, anote su **IP privada**.
 6. **EC2 web**: Ubuntu 24.04, t3.micro, `sg-web`. Pegue `deploy/user-data-web.sh` con el repositorio, la IP privada
    de datos, la misma contraseña de base y la contraseña de los usuarios de prueba.
-7. **IP elástica**: asóciela a la EC2 web. Si la asocia *después* de crearla, entre por SSH y actualice
+7. **IP elástica**: asóciela a la EC2 web. Si la asocia *después* de crearla, entre por Session Manager y actualice
    `DJANGO_ALLOWED_HOSTS` y `DJANGO_CSRF_TRUSTED_ORIGINS` en `/opt/nuam/app/.env`, regenere el certificado con la
    nueva IP y ejecute `sudo systemctl restart gunicorn-nuam nginx`.
 8. Abrir `https://<IP elástica>`. El certificado es autofirmado: el navegador muestra una advertencia que se acepta
    una vez. Con un dominio (por ejemplo, uno gratuito de DuckDNS) se puede usar `certbot --nginx` y quitarla.
 
 Revisar el avance de cada script con `sudo tail -f /var/log/cloud-init-output.log`.
+
+9. **Proteger el log de auditoría** (después de la primera migración): en la EC2 de datos ejecute
+   `sudo -u postgres psql -d nuam -f deploy/proteger-log.sql`. El usuario de la aplicación queda solo con permiso de
+   leer e insertar en las tablas del log. Las migraciones futuras de la app `auditoria` deben correrse como `postgres`.
+10. **Snapshot semanal**: política de AWS Data Lifecycle Manager `nuam-snapshot-semanal`, que toma cada domingo un
+    snapshot de los volúmenes con la etiqueta `respaldo-semanal=nuam-datos` y conserva los cuatro últimos.
 
 ### Actualizar la versión desplegada
 
@@ -73,7 +81,7 @@ sudo systemctl restart gunicorn-nuam
 ## Pruebas (sección 6 del informe)
 
 ```bash
-# Unitarias, integración y seguridad automatizadas (26 casos) + cobertura
+# Unitarias, integración y seguridad automatizadas (28 casos) + cobertura
 coverage run --source=calificaciones,usuarios,auditoria,cargas --omit="*/migrations/*,*/tests/*" manage.py test calificaciones
 coverage report
 
@@ -83,10 +91,12 @@ pip-audit -r requirements.txt
 
 # Rendimiento PR-01 y PR-02 contra el servidor (20 usuarios, 5 minutos)
 set NUAM_CLAVE=<clave de los usuarios de prueba>
-locust -f pruebas/locustfile.py --host https://<IP> --headless -u 20 -r 4 -t 5m --csv resultados/locust --html resultados/locust.html
+set NUAM_VERIFICAR_SSL=0          # el certificado del prototipo es autofirmado
+locust -f pruebas/locustfile.py --host https://<IP> --headless -u 20 -r 0.3 -t 6m --csv resultados/locust --html resultados/locust.html
 ```
 
-Para el escaneo con **OWASP ZAP** (PS-08), use el *Automated Scan* de ZAP Desktop sobre `https://<IP>`.
+Para el escaneo con **OWASP ZAP** (PS-08), use Spider y Escaneo Activo (política por defecto) de ZAP Desktop sobre
+`https://<IP>`. Los 503 que aparecen en el reporte son el límite de intentos de inicio de sesión de Nginx.
 
 El workflow `.github/workflows/pruebas.yml` ejecuta pruebas, cobertura, Bandit y pip-audit en cada push.
 
