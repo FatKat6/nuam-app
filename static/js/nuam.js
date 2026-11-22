@@ -6,3 +6,18 @@ document.addEventListener("submit", function (evento) {
     evento.preventDefault();
   }
 });
+
+// Botones «Siguiente» fuera de la barra de pestañas: data-ir-a="#id-del-panel".
+// Bootstrap solo activa pestañas desde botones que están dentro de la barra (.nav),
+// así que el botón activa la pestaña correspondiente de la barra (validación 3.7).
+document.addEventListener("click", function (evento) {
+  var boton = evento.target.closest("[data-ir-a]");
+  if (!boton || !window.bootstrap) {
+    return;
+  }
+  var pestana = document.querySelector('.nav-link[data-bs-target="' + boton.getAttribute("data-ir-a") + '"]');
+  if (pestana) {
+    window.bootstrap.Tab.getOrCreateInstance(pestana).show();
+    window.scrollTo(0, 0);
+  }
+});
