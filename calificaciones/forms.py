@@ -53,6 +53,30 @@ class DatosBasicosForm(forms.ModelForm):
         return datos
 
 
+class ModificarDatosBasicosForm(forms.ModelForm):
+    """Formulario para modificar datos básicos de una calificación existente (HU03).
+
+    Solo permite editar fecha_pago y descripcion, preservando la llave única
+    de negocio (corredor, ejercicio, mercado, instrumento, secuencia).
+    Incluye el campo version para control de concurrencia optimista.
+    """
+
+    version = forms.IntegerField(widget=forms.HiddenInput())
+
+    class Meta:
+        model = Calificacion
+        fields = ["fecha_pago", "descripcion"]
+        widgets = {
+            "fecha_pago": forms.DateInput(attrs={**ATTR, "type": "date"}, format="%Y-%m-%d"),
+            "descripcion": forms.TextInput(attrs=ATTR),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk and "version" not in self.initial:
+            self.fields["version"].initial = self.instance.version
+
+
 class MontosForm(forms.Form):
     """Montos de las columnas 8 a 37 tal como figuran en el certificado."""
 
