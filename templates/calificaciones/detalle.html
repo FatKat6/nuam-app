@@ -4,6 +4,9 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h1 class="h4 mb-0">Calificación {{ calificacion.instrumento }} · {{ calificacion.ejercicio|stringformat:"d" }}</h1>
   <div class="d-flex gap-2">
+    {% if puede.modificar and calificacion.estado == 'VIGENTE' %}
+    <a class="btn btn-nuam btn-sm" href="{% url 'calificaciones:modificar' calificacion.pk %}">Modificar</a>
+    {% endif %}
     {% if puede.eliminar %}
     <form method="post" action="{% url 'calificaciones:eliminar' calificacion.pk %}" data-confirmar="¿Eliminar esta calificación?">
       {% csrf_token %}<button class="btn btn-outline-danger btn-sm" type="submit">Eliminar</button>

@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block titulo %}Modificar calificación {{ calificacion }}{% endblock %}
+{% block contenido %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Modificar calificación {{ calificacion.instrumento }} · {{ calificacion.ejercicio|stringformat:"d" }}</h1>
+  <a class="btn btn-outline-secondary btn-sm" href="{% url 'calificaciones:detalle' calificacion.pk %}">Cancelar</a>
+</div>
+
+{% if datos.non_field_errors %}<div class="alert alert-danger">{{ datos.non_field_errors|join:" " }}</div>{% endif %}
+
+<form method="post" novalidate>
+  {% csrf_token %}
+  {{ datos.version }}
+  <ul class="nav nav-tabs" role="tablist">
+    <li class="nav-item"><button class="nav-link {% if paso == 'datos' %}active{% endif %}" data-bs-toggle="tab" data-bs-target="#tab-datos" type="button">1. Datos básicos</button></li>
+    <li class="nav-item"><button class="nav-link {% if paso == 'montos' %}active{% endif %}" data-bs-toggle="tab" data-bs-target="#tab-montos" type="button">2. Montos</button></li>
+    <li class="nav-item"><button class="nav-link {% if paso == 'factores' %}active{% endif %}" data-bs-toggle="tab" data-bs-target="#tab-factores" type="button">3. Factores</button></li>
+  </ul>
+
+  <div class="tab-content card card-body border-top-0 rounded-0 rounded-bottom">
+    {# Paso 1: Datos básicos #}
+    <div class="tab-pane fade {% if paso == 'datos' %}show active{% endif %}" id="tab-datos">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label small">Corredor</label>
+          <input type="text" class="form-control form-control-sm" value="{{ calificacion.corredor }}" disabled readonly>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small">Mercado</label>
+          <input type="text" class="form-control form-control-sm" value="{{ calificacion.instrumento.mercado }}" disabled readonly>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small">Ejercicio</label>
+          <input type="text" class="form-control form-control-sm" value="{{ calificacion.ejercicio|stringformat:'d' }}" disabled readonly>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small">Instrumento</label>
+          <input type="text" class="form-control form-control-sm" value="{{ calificacion.instrumento }}" disabled readonly>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small">Secuencia del evento</label>
+          <input type="text" class="form-control form-control-sm" value="{{ calificacion.secuencia|stringformat:'d' }}" disabled readonly>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small" for="{{ datos.fecha_pago.id_for_label }}">Fecha de pago</label>
+          {{ datos.fecha_pago }}
+          {% for e in datos.fecha_pago.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="col-md-8">
+          <label class="form-label small" for="{{ datos.descripcion.id_for_label }}">Descripción</label>
+          {{ datos.descripcion }}
+          {% for e in datos.descripcion.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+        </div>
+      </div>
+      <div class="mt-3">
+        <button class="btn btn-nuam btn-sm" type="button" data-ir-a="#tab-montos">Siguiente</button>
+      </div>
+    </div>
+
+    {# Paso 2: Montos #}
+    <div class="tab-pane fade {% if paso == 'montos' %}show active{% endif %}" id="tab-montos">
+      <p class="small text-muted">Modifique los montos tal como aparecen en el certificado N° 70. Al presionar «Calcular factores» se recalcularán los factores sobre la suma de las columnas 8 a 19.</p>
+      <h2 class="h6 mt-2">Montos de retiros, remesas o dividendos (base de cálculo, columnas 8 a 19)</h2>
+      <div class="row g-2">
+        {% for campo in montos %}{% if forloop.counter == 13 %}</div><h2 class="h6 mt-4">Créditos y otros conceptos (columnas 20 a 37)</h2><div class="row g-2">{% endif %}
+        <div class="col-md-6 col-xl-4">
+          <label class="form-label small mb-0 text-truncate d-block" for="{{ campo.id_for_label }}" title="{{ campo.label }}">{{ campo.label }}</label>
+          {{ campo }}
+          {% for e in campo.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+      <div class="mt-3 d-flex gap-2">
+        <button class="btn btn-nuam btn-sm" type="submit" name="accion" value="calcular">Calcular factores</button>
+        <button class="btn btn-outline-secondary btn-sm" type="button" data-ir-a="#tab-factores">Ir a Factores</button>
+      </div>
+    </div>
+
+    {# Paso 3: Factores #}
+    <div class="tab-pane fade {% if paso == 'factores' %}show active{% endif %}" id="tab-factores">
+      <div class="alert {% if suma and suma > 1 %}alert-danger{% else %}alert-info{% endif %} py-2 small">
+        Suma de los factores 8 al 19: <strong>{{ suma|floatformat:8 }}</strong> (no puede superar 1).
+      </div>
+      <div class="row g-2">
+        {% for campo in factores %}
+        <div class="col-md-6 col-xl-4">
+          <label class="form-label small mb-0 text-truncate d-block" for="{{ campo.id_for_label }}" title="{{ campo.label }}">{{ campo.label }}</label>
+          {{ campo }}
+          {% for e in campo.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+      <div class="mt-3 d-flex gap-2">
+        <button class="btn btn-nuam btn-sm" type="submit" name="accion" value="grabar">Grabar</button>
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'calificaciones:detalle' calificacion.pk %}">Cancelar</a>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}
